@@ -7,18 +7,33 @@ from pathlib import Path
 
 
 def _check_env() -> None:
-    """Check required env vars are present before any subcommand runs."""
+    """Check required env vars are present. Non-fatal — allows init to run."""
     from dotenv import load_dotenv
     load_dotenv()
-    required = ["META_ACCESS_TOKEN", "META_IG_USER_ID", "ANTHROPIC_API_KEY"]
-    missing = [v for v in required if not os.getenv(v)]
-    if missing:
+
+    required = {
+        "META_ACCESS_TOKEN": "Meta Graph API token (60-day user access token)",
+        "META_IG_USER_ID": "Instagram Business/Creator account ID",
+        "ANTHROPIC_API_KEY": "Anthropic API key for Claude text generation",
+    }
+    optional = {
+        "HF_API_TOKEN": "HuggingFace token (required for AI image generation)",
+        "IMAGE_PROVIDER": "Image generation provider (default: huggingface)",
+    }
+
+    missing_required = []
+    for var, desc in required.items():
+        if not os.getenv(var):
+            missing_required.append((var, desc))
+
+    if missing_required:
         print(
-            f"[instagram_manager] Missing required environment variables: {', '.join(missing)}\n"
-            f"  → Check your .env file. See .env.example for reference.",
+            "[instagram_manager] Missing required environment variables:\n"
+            + "\n".join(f"  ✗ {var}: {desc}" for var, desc in missing_required)
+            + "\n  → Configure in your .env file. See .env.example for reference.",
             file=sys.stderr,
         )
-        # Do not exit — allow init to run without credentials
+    # Note: we do NOT exit — allow init to proceed
 
 
 def _cmd_init(args: argparse.Namespace) -> None:
@@ -159,11 +174,69 @@ def _cmd_generate(args: argparse.Namespace) -> None:
 
 
 def _cmd_publish(args: argparse.Namespace) -> None:
-    print("[instagram-publish] Not yet implemented.")
+    from instagram_manager.publisher import publish_plan, TokenExpiredError
+    from instagram_manager.storage import PlanNotFound
+    from pathlib import Path
+    week = getattr(args, "week", None)
+    if not week:
+        plans_dir = Path(".instagram/memory/plans")
+        if plans_dir.exists():
+            files = sorted(plans_dir.glob("*.json"))
+            if files:
+                week = files[-1].stem
+    if not week:
+        print("[instagram-publish] No plan found.", file=sys.stderr)
+        sys.exit(1)
+    try:
+        summary = publish_plan(
+            week=week,
+            item_id=getattr(args, "item", None),
+            publish_all=getattr(args, "publish_all", False),
+        )
+        if summary.get("token_warning"):
+            print(summary["token_warning"])
+        print(f"[instagram-publish] Week {week}: {summary['succeeded']} published, "
+              f"{summary['failed']} failed, {summary['blocked']} blocked, "
+              f"{summary['skipped']} skipped.")
+    except TokenExpiredError as e:
+        print(f"[instagram-publish] {e}", file=sys.stderr)
+        sys.exit(1)
+    except PlanNotFound as e:
+        print(f"[instagram-publish] Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def _cmd_insights(args: argparse.Namespace) -> None:
-    print("[instagram-insights] Not yet implemented.")
+    from instagram_manager.insights import fetch_week_insights
+    from instagram_manager.storage import PlanNotFound
+    from pathlib import Path
+    week = getattr(args, "week", None)
+    if not week:
+        plans_dir = Path(".instagram/memory/plans")
+        if plans_dir.exists():
+            files = sorted(plans_dir.glob("*.json"))
+            if files:
+                week = files[-1].stem
+    if not week:
+        print("[instagram-insights] No plan found.", file=sys.stderr)
+        sys.exit(1)
+    try:
+        result = fetch_week_insights(week)
+        posts = result.get("posts", [])
+        summary = result.get("summary", {})
+        print(f"[instagram-insights] Fetched insights for {len(posts)} posts in week {week}")
+        for p in posts:
+            metrics = p.get("metrics", {})
+            avail = "⭐" if p.get("top_performer") else "  "
+            print(f"  {avail} {p['item_id']} {p['format']:10s} "
+                  f"reach: {metrics.get('reach', 0):,}  "
+                  f"engagement: {metrics.get('engagement_rate', 0):.1%}")
+        print(f"\nInsights saved to .instagram/memory/insights/{week}.json")
+        if summary.get("best_format"):
+            print(f"Run /instagram-plan for {week} to use these insights.")
+    except PlanNotFound as e:
+        print(f"[instagram-insights] Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def build_parser() -> argparse.ArgumentParser:

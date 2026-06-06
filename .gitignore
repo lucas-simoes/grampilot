@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+.eggs/
+*.egg
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Instagram manager runtime state
+.instagram/media/
+.instagram/memory/assets/
+.instagram/memory/plans/
+.instagram/memory/insights/
+.instagram/memory/logs/
+.instagram/memory/style-profile.md
+.instagram/memory/.token-meta
+
+# Test & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -391,10 +391,10 @@ def generate_plan_assets(
     item_id: Optional[str] = None,
     format_filter: Optional[str] = None,
 ) -> dict:
-    """Generate assets for all approved items in a plan (or a single item).
+    """Generate assets for all approved items in a plan (or a single item)."""
+    from rich.console import Console
 
-    Returns summary dict: {succeeded: int, blocked: int, failed: int}
-    """
+    console = Console()
     plan = load_plan(week)
     items = plan.items
 
@@ -403,17 +403,39 @@ def generate_plan_assets(
     if format_filter:
         items = [i for i in items if i.format.value == format_filter]
 
+    eligible = [i for i in items if i.status in (ItemStatus.PENDING, ItemStatus.BLOCKED)]
+
+    if not eligible:
+        console.print(f"[yellow]No eligible items to generate in plan {week}[/yellow]")
+        return {"succeeded": 0, "blocked": 0, "failed": 0}
+
+    console.print(f"\n[bold]Generating assets for plan {week} ({len(eligible)} items)...[/bold]\n")
+
     succeeded = blocked = failed = 0
-    for item in items:
-        if item.status not in (ItemStatus.PENDING, ItemStatus.BLOCKED):
-            continue
+    for idx, item in enumerate(eligible, 1):
+        prefix = f"[{idx}/{len(eligible)}] {item.id} {item.format.value:10s}"
         try:
             ok = generate_item(item, week)
             if ok:
                 succeeded += 1
+                console.print(f"  {prefix} [green]✓ generated[/green]")
             else:
                 blocked += 1
-        except Exception:
+                console.print(
+                    f"  {prefix} [yellow]✗ BLOCKED[/yellow]\n"
+                    f"      → Retry with: instagram-manager generate --item {item.id}"
+                )
+        except Exception as e:
             failed += 1
+            console.print(f"  {prefix} [red]✗ FAILED: {e}[/red]")
+
+    console.print(
+        f"\n[bold]Generation complete:[/bold] "
+        f"[green]{succeeded}[/green] succeeded, "
+        f"[yellow]{blocked}[/yellow] blocked, "
+        f"[red]{failed}[/red] failed"
+    )
+    if succeeded > 0:
+        console.print(f"Assets saved to .instagram/memory/assets/{week}/")
 
     return {"succeeded": succeeded, "blocked": blocked, "failed": failed}

@@ -113,14 +113,14 @@ completable and testable without the phases that follow it.
 **Story goal**: Operator runs `/instagram-publish`; approved, asset-ready posts are submitted to Instagram immediately via Meta Graph API; failures are logged and surfaced.
 **Independent test**: Run `/instagram-publish --item <id>` against a mock HTTP server returning a valid Meta API response; verify item status transitions to `published`, `meta_post_id` recorded, event logged.
 
-- [ ] T047 [US3] Implement full Meta Graph API client in `src/instagram_manager/meta_client.py`: `create_media_container(IG_USER_ID, media_type, image_url | video_url, caption)` → `POST /v18.0/{IG_USER_ID}/media`; `publish_container(IG_USER_ID, container_id)` → `POST /v18.0/{IG_USER_ID}/media_publish`; retry up to 3× with 10s backoff on 5xx; raise `RateLimitError` on 429
-- [ ] T048 [US3] Implement image/video upload helpers in `src/instagram_manager/publisher.py`: for each format (feed, carousel, story, reel), reads asset files from `manifest.json`, uploads binary to a temporary hosting location accessible by Meta API (or uses Meta's resumable upload for videos)
-- [ ] T048b [US3] Implement image upload-session flow in `src/instagram_manager/publisher.py`: `upload_image(image_bytes: bytes) -> str` — creates an upload session via `POST /v18.0/<IG_USER_ID>/media` with `media_type=IMAGE`, uploads bytes directly, returns the container ID; handles carousel by creating one session per slide before the carousel container merge step; adds Cloudinary URL path as config-toggled fallback when `publisher.image_hosting=cloudinary` is set in `config.yml`
-- [ ] T049 [US3] Implement token expiry check in `src/instagram_manager/publisher.py`: `check_token_expiry()` — reads `META_ACCESS_TOKEN` expiry from a cached `.instagram/memory/.token-meta` file (written by init); warns if < 7 days; raises `TokenExpiredError` if expired
-- [ ] T050 [US3] Implement publishing orchestrator in `src/instagram_manager/publisher.py`: `publish_item(item: ContentItem)` — validates assets exist, checks token, uploads media, publishes container, records `meta_post_id`, updates item status, logs `PublishEvent`; handles `RateLimitError` with backoff
-- [ ] T051 [US3] Implement `/instagram-publish` skill file at `.claude/skills/instagram-publish/README.md`: single-item and `--all` batch modes per `contracts/skill-commands.md`; displays per-item outcomes; surfaces token expiry warning
-- [ ] T052 [US3] [P] Write unit tests for `publisher.py` in `tests/unit/test_publisher.py`: mock meta_client; verify status transitions, retry logic, token expiry warning, BLOCKED skipping
-- [ ] T053 [US3] [P] Write integration tests for `meta_client.py` in `tests/integration/test_meta_client.py`: mock HTTP with `responses` library; verify container creation, publish, 3× retry on 5xx, 429 handling
+- [x] T047 [US3] Implement full Meta Graph API client in `src/instagram_manager/meta_client.py`: `create_media_container(IG_USER_ID, media_type, image_url | video_url, caption)` → `POST /v18.0/{IG_USER_ID}/media`; `publish_container(IG_USER_ID, container_id)` → `POST /v18.0/{IG_USER_ID}/media_publish`; retry up to 3× with 10s backoff on 5xx; raise `RateLimitError` on 429
+- [x] T048 [US3] Implement image/video upload helpers in `src/instagram_manager/publisher.py`: for each format (feed, carousel, story, reel), reads asset files from `manifest.json`, uploads binary to a temporary hosting location accessible by Meta API (or uses Meta's resumable upload for videos)
+- [x] T048b [US3] Implement image upload-session flow in `src/instagram_manager/publisher.py`: `upload_image(image_bytes: bytes) -> str` — creates an upload session via `POST /v18.0/<IG_USER_ID>/media` with `media_type=IMAGE`, uploads bytes directly, returns the container ID; handles carousel by creating one session per slide before the carousel container merge step; adds Cloudinary URL path as config-toggled fallback when `publisher.image_hosting=cloudinary` is set in `config.yml`
+- [x] T049 [US3] Implement token expiry check in `src/instagram_manager/publisher.py`: `check_token_expiry()` — reads `META_ACCESS_TOKEN` expiry from a cached `.instagram/memory/.token-meta` file (written by init); warns if < 7 days; raises `TokenExpiredError` if expired
+- [x] T050 [US3] Implement publishing orchestrator in `src/instagram_manager/publisher.py`: `publish_item(item: ContentItem)` — validates assets exist, checks token, uploads media, publishes container, records `meta_post_id`, updates item status, logs `PublishEvent`; handles `RateLimitError` with backoff
+- [x] T051 [US3] Implement `/instagram-publish` skill file at `.claude/skills/instagram-publish/README.md`: single-item and `--all` batch modes per `contracts/skill-commands.md`; displays per-item outcomes; surfaces token expiry warning
+- [x] T052 [US3] [P] Write unit tests for `publisher.py` in `tests/unit/test_publisher.py`: mock meta_client; verify status transitions, retry logic, token expiry warning, BLOCKED skipping
+- [x] T053 [US3] [P] Write integration tests for `meta_client.py` in `tests/integration/test_meta_client.py`: mock HTTP with `responses` library; verify container creation, publish, 3× retry on 5xx, 429 handling
 
 ---
 
@@ -129,10 +129,10 @@ completable and testable without the phases that follow it.
 **Story goal**: Each ContentItem in the plan has a HashtagSet with ≤30 hashtags across broad/niche/branded tiers.
 **Independent test**: Call `generate_hashtags(theme, format, brand)` with a mock Claude response; verify returned HashtagSet total ≤ 30 and all three tiers present.
 
-- [ ] T054 [US4] Write prompt template `.instagram/templates/prompts/generate-hashtags.md`: instructs Claude to output a JSON object with `broad` (10 tags), `niche` (15 tags), `branded` (up to 5 tags) arrays for the given post theme, format, and niche from brand profile
-- [ ] T055 [US4] Implement hashtag generation in `src/instagram_manager/planner.py`: `generate_hashtags(theme, format, brand) -> HashtagSet` — calls Claude API with `generate-hashtags.md`; validates total ≤ 30; raises `HashtagLimitError` if response exceeds limit
-- [ ] T056 [US4] Integrate hashtag generation into `generate_plan`: call `generate_hashtags` for each `ContentItem` in the plan; attach `HashtagSet` to item; append hashtag string to `copy_draft` in `YYYY-WW.md`
-- [ ] T057 [US4] [P] Add hashtag validation to `models.py`: enforce total count ≤ 30 in `HashtagSet.__post_init__`; add to `test_models.py`
+- [x] T054 [US4] Write prompt template `.instagram/templates/prompts/generate-hashtags.md`: instructs Claude to output a JSON object with `broad` (10 tags), `niche` (15 tags), `branded` (up to 5 tags) arrays for the given post theme, format, and niche from brand profile
+- [x] T055 [US4] Implement hashtag generation in `src/instagram_manager/planner.py`: `generate_hashtags(theme, format, brand) -> HashtagSet` — calls Claude API with `generate-hashtags.md`; validates total ≤ 30; raises `HashtagLimitError` if response exceeds limit
+- [x] T056 [US4] Integrate hashtag generation into `generate_plan`: call `generate_hashtags` for each `ContentItem` in the plan; attach `HashtagSet` to item; append hashtag string to `copy_draft` in `YYYY-WW.md`
+- [x] T057 [US4] [P] Add hashtag validation to `models.py`: enforce total count ≤ 30 in `HashtagSet.__post_init__`; add to `test_models.py`
 
 ---
 
@@ -141,12 +141,12 @@ completable and testable without the phases that follow it.
 **Story goal**: Operator runs `/instagram-insights`; metrics retrieved for all published posts; next `/instagram-plan` references top performers.
 **Independent test**: Mock Meta Insights API returning metrics for 3 posts; verify `YYYY-WW.json` written with correct `engagement_rate` computation, `top_performer: true` on highest; verify next `/instagram-plan` call includes performance summary in generated plan.
 
-- [ ] T058 [US5] Implement Meta Insights API client in `src/instagram_manager/insights.py`: `fetch_insights(media_id: str) -> dict` — `GET /v18.0/{MEDIA_ID}/insights?metric=reach,impressions,likes,comments,shares,saved`; handles 48h latency (returns `data_available: false` if insufficient data)
-- [ ] T059 [US5] Implement insights aggregation in `src/instagram_manager/insights.py`: `compute_summary(posts: list) -> dict` — finds `best_format`, `best_time_slot`, `best_asset_source`, `avg_engagement_rate`, `top_item_id`; computes `engagement_rate = (likes+comments+shares+saved)/reach`
-- [ ] T060 [US5] Implement insights storage and top-performer tagging in `src/instagram_manager/insights.py`: `save_insights(week, posts)` writes `.instagram/memory/insights/YYYY-WW.json`; marks `top_performer: true` on highest engagement item
-- [ ] T061 [US5] Implement `/instagram-insights` skill file at `.claude/skills/instagram-insights/README.md`: fetches metrics for all published items in the target week, displays summary table with `rich`, notes items with `data_available: false`
-- [ ] T062 [US5] Integrate insights reader into `planner.py`: at start of `generate_plan`, load insights from previous week if available; prepend a performance summary section to the Claude prompt so next week's plan is informed by top performers and best formats
-- [ ] T063 [US5] [P] Write unit tests for `insights.py` in `tests/unit/test_insights.py`: mock Meta API responses; verify `engagement_rate` formula, `top_performer` assignment, `data_available: false` for recent posts, `best_asset_source` computation
+- [x] T058 [US5] Implement Meta Insights API client in `src/instagram_manager/insights.py`: `fetch_insights(media_id: str) -> dict` — `GET /v18.0/{MEDIA_ID}/insights?metric=reach,impressions,likes,comments,shares,saved`; handles 48h latency (returns `data_available: false` if insufficient data)
+- [x] T059 [US5] Implement insights aggregation in `src/instagram_manager/insights.py`: `compute_summary(posts: list) -> dict` — finds `best_format`, `best_time_slot`, `best_asset_source`, `avg_engagement_rate`, `top_item_id`; computes `engagement_rate = (likes+comments+shares+saved)/reach`
+- [x] T060 [US5] Implement insights storage and top-performer tagging in `src/instagram_manager/insights.py`: `save_insights(week, posts)` writes `.instagram/memory/insights/YYYY-WW.json`; marks `top_performer: true` on highest engagement item
+- [x] T061 [US5] Implement `/instagram-insights` skill file at `.claude/skills/instagram-insights/README.md`: fetches metrics for all published items in the target week, displays summary table with `rich`, notes items with `data_available: false`
+- [x] T062 [US5] Integrate insights reader into `planner.py`: at start of `generate_plan`, load insights from previous week if available; prepend a performance summary section to the Claude prompt so next week's plan is informed by top performers and best formats
+- [x] T063 [US5] [P] Write unit tests for `insights.py` in `tests/unit/test_insights.py`: mock Meta API responses; verify `engagement_rate` formula, `top_performer` assignment, `data_available: false` for recent posts, `best_asset_source` computation
 
 ---
 
@@ -154,11 +154,11 @@ completable and testable without the phases that follow it.
 
 **Purpose**: Documentation, error message consistency, prompt quality, and final validation.
 
-- [ ] T064 Fill all six prompt template files in `.instagram/templates/prompts/` with production-quality prompt text matching the `plan-week.md`, `generate-caption.md`, `generate-hashtags.md`, `generate-carousel.md`, `generate-reel-script.md`, `analyze-style.md` roles defined in `research.md`
-- [ ] T065 [P] Validate and finalise all seven `.claude/skills/instagram-*/README.md` skill files: ensure each matches the exact invocation syntax, inputs, outputs, and error messages specified in `contracts/skill-commands.md`
-- [ ] T066 [P] Update all eight `.instagram/scripts/bash/` scripts: ensure each passes all CLI flags through to `python -m instagram_manager`; add `set -e` and basic error output
-- [ ] T067 [P] Add `rich` progress display to `generator.py` batch mode: per-item `[N/total] item_id format ✓/✗` line; final summary count (success / blocked / failed)
-- [ ] T068 [P] Validate `.env` completeness at CLI startup in `src/instagram_manager/cli.py`: check required vars present before any subcommand runs; surface clear missing-var message with reference to `.env.example`
+- [x] T064 Fill all six prompt template files in `.instagram/templates/prompts/` with production-quality prompt text matching the `plan-week.md`, `generate-caption.md`, `generate-hashtags.md`, `generate-carousel.md`, `generate-reel-script.md`, `analyze-style.md` roles defined in `research.md`
+- [x] T065 [P] Validate and finalise all seven `.claude/skills/instagram-*/README.md` skill files: ensure each matches the exact invocation syntax, inputs, outputs, and error messages specified in `contracts/skill-commands.md`
+- [x] T066 [P] Update all eight `.instagram/scripts/bash/` scripts: ensure each passes all CLI flags through to `python -m instagram_manager`; add `set -e` and basic error output
+- [x] T067 [P] Add `rich` progress display to `generator.py` batch mode: per-item `[N/total] item_id format ✓/✗` line; final summary count (success / blocked / failed)
+- [x] T068 [P] Validate `.env` completeness at CLI startup in `src/instagram_manager/cli.py`: check required vars present before any subcommand runs; surface clear missing-var message with reference to `.env.example`
 
 ---
 
