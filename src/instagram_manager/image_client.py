@@ -43,43 +43,35 @@ def resize_to_instagram(image_bytes: bytes, format: str = "feed") -> bytes:
 
 
 class HuggingFaceImageClient(ImageClient):
-    """Image generation via HuggingFace Inference API."""
+    """Image generation via HuggingFace huggingface_hub InferenceClient."""
 
     DEFAULT_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
 
     def __init__(self, model: Optional[str] = None):
         self.model = model or os.getenv("HF_MODEL", self.DEFAULT_MODEL)
-        self.token = os.getenv("HF_API_TOKEN", "")
+        self.token = os.getenv("HF_API_TOKEN", "") or None
 
     def generate(self, prompt: str, size: tuple[int, int] = (1080, 1080)) -> bytes:
-        import requests
-        headers = {}
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
-        url = f"https://api-inference.huggingface.co/models/{self.model}"
-        payload = {"inputs": prompt}
+        try:
+            from huggingface_hub import InferenceClient
+        except ImportError:
+            raise ImageGenerationError("huggingface_hub not installed. Run: uv add huggingface_hub")
+
+        client = InferenceClient(token=self.token)
         last_error: Optional[Exception] = None
         for attempt in range(3):
             try:
-                resp = requests.post(url, headers=headers, json=payload, timeout=60)
-            except requests.RequestException as e:
-                last_error = ImageGenerationError(f"Network error: {e}")
+                result = client.text_to_image(prompt, model=self.model)
+                buf = io.BytesIO()
+                result.save(buf, format="JPEG", quality=90)
+                raw = buf.getvalue()
+                return resize_to_instagram(raw, format="feed")
+            except Exception as e:
+                msg = str(e)
+                if "429" in msg or "rate limit" in msg.lower():
+                    raise ImageGenerationError("HuggingFace rate limit exceeded (429)")
+                last_error = ImageGenerationError(f"HuggingFace error: {msg[:200]}")
                 time.sleep(2 ** attempt)
-                continue
-            if resp.status_code == 503:
-                # Model loading — wait and retry
-                time.sleep(20)
-                continue
-            if resp.status_code == 429:
-                raise ImageGenerationError("HuggingFace rate limit exceeded (429)")
-            if not resp.ok:
-                last_error = ImageGenerationError(
-                    f"HuggingFace API error {resp.status_code}: {resp.text[:200]}"
-                )
-                time.sleep(2 ** attempt)
-                continue
-            raw = resp.content
-            return resize_to_instagram(raw, format="feed")
         raise last_error or ImageGenerationError("Max retries exceeded")
 
 

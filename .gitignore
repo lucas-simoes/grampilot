@@ -18,20 +18,24 @@ build/
 .env.*
 !.env.example
 
-# Instagram manager runtime state
+# Instagram manager runtime state (personal content)
 .instagram/media/
-.instagram/memory/assets/
-.instagram/memory/plans/
-.instagram/memory/insights/
-.instagram/memory/logs/
-.instagram/memory/style-profile.md
-.instagram/memory/.token-meta
+.instagram/memory/
 
 # Test & coverage
 .pytest_cache/
 .coverage
 htmlcov/
 coverage.xml
+
+# Personal & local-only files
+CLAUDE.md
+
+# Spec & planning artifacts (local only)
+specs/
+.specify/
+.claude/skills/speckit-*/
+.claude/settings.local.json
 
 # IDE
 .vscode/
