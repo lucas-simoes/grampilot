@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+.eggs/
+*.egg
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Instagram manager runtime state (personal content)
+.instagram/media/
+.instagram/memory/
+
+# Test & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Personal & local-only files
+CLAUDE.md
+
+# Spec & planning artifacts (local only)
+specs/
+.specify/
+.claude/skills/speckit-*/
+.claude/settings.local.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

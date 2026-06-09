@@ -1,0 +1,24 @@
+# Instagram Manager Configuration
+
+image_provider:
+  type: huggingface          # options: huggingface | replicate | local_sd | cloudinary
+  model: "stabilityai/stable-diffusion-xl-base-1.0"
+  cloudinary_url: ""         # set if type=cloudinary
+
+publisher:
+  image_hosting: upload_session  # options: upload_session | cloudinary
+  rate_limit_delay_seconds: 2
+
+style_analysis:
+  max_photos: 10
+  auto_update: true          # re-run analyze_style when new photos added via CLI
+
+accepted_formats:
+  photo: ["jpg", "jpeg", "png", "webp", "heic"]
+  video: ["mp4", "mov"]
+  audio: ["mp3", "wav", "m4a"]
+
+meta_api:
+  version: "v18.0"
+  max_retries: 3
+  retry_backoff_seconds: 10
